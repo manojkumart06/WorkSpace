@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo App</title>
+<style>
+    canvas {
+        border: 1px solid black;
+    }
+</style>
+</head>
+<body>
+<canvas id="myCanvas" width="1000" height="500" ></canvas><br>
+<button onclick="reset()">Reset</button>
+
+<script>
+    const canvas = document.getElementById('myCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const circleColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00'];
+    const circleRadius = 40;
+    const circleYPositions = [100, 200, 300, 400];
+    const arrowLength = 50;
+    const arrowHeadSize = 10;
+
+    let circles = [];
+    let arrows = [];
+    let animations = []; // Store animations for each arrow
+
+    function drawCircle(x, y, color) {
+        ctx.beginPath();
+        ctx.arc(x, y, circleRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function drawArrow(x, y) {
+        ctx.beginPath();
+        ctx.lineWidth = "3";
+        ctx.moveTo(x, y);
+        ctx.lineTo(x - arrowLength, y); // Corrected arrow direction
+        ctx.lineTo(x - arrowLength + arrowHeadSize, y - arrowHeadSize);
+        ctx.moveTo(x - arrowLength, y);
+        ctx.lineTo(x - arrowLength + arrowHeadSize, y + arrowHeadSize);
+        ctx.strokeStyle = 'black';
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    function draw() {
+        for (let i = 0; i < circleColors.length; i++) {
+            const x = 100;
+            const y = circleYPositions[i];
+            drawCircle(x, y, circleColors[i]);
+            circles.push({ x, y, color: circleColors[i] });
+            drawArrow(x + circleRadius * 2, y);
+            arrows.push({ x: x + circleRadius * 2, y });
+        }
+    }
+
+    function reset() {
+        animations.forEach(animation => clearInterval(animation)); // Clear all animations
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        circles = [];
+        arrows = [];
+        animations = [];
+        draw();
+    }
+
+    function moveArrow(index) {
+        const circle = circles[index];
+        const arrow = arrows[index];
+
+        const dx = circle.x - arrow.x;
+        const dy = circle.y - arrow.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        const speed = 5;
+        const velocityX = (dx / distance) * speed;
+        const velocityY = (dy / distance) * speed;
+
+        if (distance > circleRadius) {
+            arrow.x += velocityX;
+            arrow.y += velocityY;
+        } else {
+            clearInterval(animations[index]); // Clear animation when arrow reaches the circle
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            draw();
+            drawCircle(circle.x, circle.y, 'gray');
+            circle.color = 'gray'; // Change circle color
+        }
+    }
+
+    canvas.addEventListener('click', function (e) {
+        const clickX = e.offsetX;
+        const clickY = e.offsetY;
+
+        circles.forEach((circle, index) => {
+            const dx = clickX - circle.x;
+            const dy = clickY - circle.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < circleRadius) {
+                clearInterval(animations[index]); // Clear previous animation for this circle
+                animations[index] = setInterval(() => moveArrow(index), 1); // Store animation interval
+            }
+        });
+    });
+
+    draw();
+</script>
+</body>
+</html>
